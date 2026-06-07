@@ -476,6 +476,15 @@ main {
 </div>
 
 <script>
+// ─── PI 2026.2 Timeline ───────────────────────────────────────────────────────
+
+const PI_START = new Date('2026-04-01T00:00:00');
+const PI_END   = new Date('2026-06-21T23:59:59');
+const PI_TOTAL_DAYS   = Math.max(1, (PI_END - PI_START) / 86400000);
+const PI_ELAPSED_DAYS = Math.max(0, Math.min(PI_TOTAL_DAYS, (Date.now() - PI_START) / 86400000));
+const PI_ELAPSED_PCT  = Math.round(PI_ELAPSED_DAYS / PI_TOTAL_DAYS * 100);
+const PI_DAYS_LEFT    = Math.max(0, Math.ceil((PI_END - Date.now()) / 86400000));
+
 // ─── SLA Config ───────────────────────────────────────────────────────────────
 
 const SLA_KEY = 'dlp-sla-v1';
@@ -641,9 +650,13 @@ async function loadPI() {
     const total    = done + review + progress + todo + blocked + deferred;
     const active   = Math.max(1, total - deferred - blocked);
     const inFlight = review + progress;
-    const score    = Math.min(100, Math.round((done * 100 + review * 75 + progress * 40) / active));
+    const rawScore = Math.min(100, Math.round((done * 100 + review * 75 + progress * 40) / active));
     const pctDone  = Math.round(done / active * 100);
-    return { done, review, progress, todo, blocked, deferred, unplanned, total, active, inFlight, score, pctDone };
+    // Time-pressured score: subtract a penalty proportional to the deficit between
+    // raw progress and PI time elapsed. On-pace = no penalty; behind = score drops.
+    const deficit = Math.max(0, PI_ELAPSED_PCT - rawScore);
+    const score = Math.max(0, Math.round(rawScore - 0.7 * deficit));
+    return { done, review, progress, todo, blocked, deferred, unplanned, total, active, inFlight, rawScore, score, pctDone };
   }
   renderPICard('cloud-pi-body',  analyzePI(cloudSection));
   renderPICard('onprem-pi-body', analyzePI(onpremSection));
@@ -651,12 +664,15 @@ async function loadPI() {
 
 function renderPICard(bodyId, d) {
   const defBlocked = d.deferred + d.blocked;
+  const timeLabel = PI_DAYS_LEFT > 0
+    ? `${PI_DAYS_LEFT}d left &middot; ${PI_ELAPSED_PCT}% elapsed`
+    : `PI 2026.2 ended`;
   document.getElementById(bodyId).innerHTML = `
     <div class="score-section">
-      ${ring(d.score, 'Progress')}
+      ${ring(d.score, 'Health')}
       <div class="score-info">
         <div class="score-headline ${scoreClass(d.score)}">${d.done} Done</div>
-        <div class="score-sub">${d.pctDone}% complete &middot; ${d.total} total<br>PI 2026.2</div>
+        <div class="score-sub">${d.pctDone}% complete &middot; ${d.total} total &middot; raw ${d.rawScore}%<br>PI 2026.2 &middot; ${timeLabel}</div>
       </div>
     </div>
     <hr class="div">
