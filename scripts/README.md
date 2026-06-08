@@ -17,6 +17,24 @@ Only stdlib is used — Python 3.10+ is enough, no `pip install` needed.
 
 ## Daily refresh
 
+### Option 1 — Refresh button in the browser (recommended)
+
+```sh
+python3 scripts/serve.py            # listens on http://127.0.0.1:8765
+```
+
+Open <http://127.0.0.1:8765/pi-dashboard.html>. A **↻ Refresh from Jira** button
+appears in the top-right of the header. Clicking it:
+
+1. POSTs to `/api/refresh`, which runs `fetch_initiatives.py` + `splice_dashboard.py`
+2. On success, reloads the page with a cache-busting query string
+
+The button stays hidden when the page is served from anywhere else
+(GitHub Pages, plain `python3 -m http.server`, etc.) — it probes `HEAD /api/refresh`
+on load and only un-hides itself when the refresh backend responds.
+
+### Option 2 — Run the scripts directly
+
 ```sh
 python3 scripts/fetch_initiatives.py    # writes scripts/initiatives.json
 python3 scripts/splice_dashboard.py     # patches pi-dashboard.html

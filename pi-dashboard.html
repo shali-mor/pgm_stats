@@ -201,6 +201,22 @@
   tr.row-incomplete:not(.blocker-row):not([data-planned="yes"]) > td:first-child {
     border-left: 2px solid var(--orange); padding-left: 6px;
   }
+  /* Refresh button — auto-shown when scripts/serve.py is the backend */
+  .refresh-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; font-size: 13px; font-weight: 500;
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    cursor: pointer; transition: all 0.15s ease;
+  }
+  .refresh-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .refresh-btn:disabled { opacity: 0.6; cursor: progress; }
+  .refresh-btn .refresh-icon { font-size: 15px; line-height: 1; display: inline-block; }
+  .refresh-btn.spinning .refresh-icon { animation: spin 0.9s linear infinite; }
+  .refresh-btn.ok { border-color: var(--green); color: var(--green); }
+  .refresh-btn.err { border-color: var(--red); color: var(--red); }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .header { align-items: center; }
 </style>
 </head>
 <body>
@@ -210,6 +226,9 @@
     <h1>PI 2026.2 Initiative Completion Dashboard</h1>
     <div class="date-stamp">PI 2026.2 In Progress — As of June 8, 2026</div>
   </div>
+  <button id="refresh-btn" class="refresh-btn" onclick="refreshFromJira()" hidden>
+    <span class="refresh-icon">↻</span> <span class="refresh-label">Refresh from Jira</span>
+  </button>
 </div>
 
 <div class="tab-bar">
@@ -717,6 +736,55 @@ const onpremUnplanned = countByPlan('tab-onprem', false);
 renderPlanPills('onprem', onpremPlanned, onpremUnplanned);
 
 injectSectionCounts();
+
+// ─── Refresh from Jira (requires scripts/serve.py running locally) ─────────
+// Show the button only when a refresh backend responds to HEAD /api/refresh.
+// On GitHub Pages or any plain static host the probe fails and the button stays hidden.
+(async function setupRefreshButton() {
+  const btn = document.getElementById('refresh-btn');
+  if (!btn) return;
+  try {
+    const probe = await fetch('/api/refresh', { method: 'HEAD' });
+    if (probe.ok) btn.hidden = false;
+  } catch { /* no backend → leave button hidden */ }
+})();
+
+async function refreshFromJira() {
+  const btn = document.getElementById('refresh-btn');
+  if (!btn) return;
+  const label = btn.querySelector('.refresh-label');
+  const prevLabel = label.textContent;
+  btn.disabled = true;
+  btn.classList.remove('ok', 'err');
+  btn.classList.add('spinning');
+  label.textContent = 'Refreshing…';
+  try {
+    const r = await fetch('/api/refresh', { method: 'POST' });
+    const data = await r.json();
+    if (!r.ok || !data.ok) {
+      console.error('refresh failed:', data.log);
+      btn.classList.add('err');
+      label.textContent = 'Refresh failed';
+      alert('Refresh failed:\n\n' + (data.log || 'unknown error'));
+      return;
+    }
+    btn.classList.add('ok');
+    label.textContent = `Refreshed (${(data.ms / 1000).toFixed(1)}s) — reloading…`;
+    setTimeout(() => { location.replace(location.pathname + '?t=' + Date.now()); }, 600);
+  } catch (e) {
+    console.error(e);
+    btn.classList.add('err');
+    label.textContent = 'Refresh failed';
+    alert('Refresh failed:\n\n' + e.message);
+  } finally {
+    btn.classList.remove('spinning');
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.classList.remove('ok', 'err');
+      label.textContent = prevLabel;
+    }, 3000);
+  }
+}
 </script>
 </body>
 </html>
