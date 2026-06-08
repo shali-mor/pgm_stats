@@ -1,0 +1,93 @@
+{
+  "pi": {
+    "name": "PI 2026.2",
+    "start": "2026-04-01",
+    "end": "2026-06-21",
+    "header_subtitle": "PI 2026.2 In Progress — As of {today}"
+  },
+  "jira": {
+    "base_url": "https://forcepoint.atlassian.net",
+    "browse_prefix": "https://forcepoint.atlassian.net/browse/"
+  },
+  "tabs": {
+    "cloud": {
+      "title": "Cloud DLP",
+      "sections": [
+        {
+          "title": "Customer-Facing Features",
+          "badge": "PI 2026.2 deliveries",
+          "keys": [
+            { "key": "DSA-1062", "label": "Cloud DLP Free Trial — Getting Started" },
+            { "key": "DSA-914",  "label": "Enterprise Readiness | Improve Policy Management Usability" },
+            { "key": "DSA-789",  "label": "DSE Agent | Mac Support" },
+            { "key": "DSA-1058", "label": "Cloud Portal Support for DSE Agent" },
+            { "key": "DSA-998",  "label": "DSE Agent | DLP Engine Support for Cloud Managed F1E" },
+            { "key": "DSA-965",  "label": "AI-Powered DLP | Expose policy setup and incident investigation as MCP tools" },
+            { "key": "DSA-1076", "label": "Cloud DLP | AI Security — Adapt CASB API Channel to AI Use Case" }
+          ]
+        },
+        {
+          "title": "Operational, Tech Debt & Sustaining",
+          "badge": "Themes: DSA-1050 / DSA-927",
+          "keys": [
+            { "key": "DSA-1037", "label": "False positives" },
+            { "key": "DSA-1054", "label": "Cloud DLP Deployments" },
+            { "key": "DSA-1038", "label": "DS Cloud DevOps — On Call" },
+            { "key": "DSA-1053", "label": "Omega Sustaining / Tech Debt" },
+            { "key": "DSA-1059", "label": "DPS Sustaining Work" },
+            { "key": "DSA-1166", "label": "Lambda Sustaining / Tech Debt" }
+          ]
+        },
+        {
+          "title": "Escalations & Urgent Customer Work",
+          "badge": "Theme: DSA-1095",
+          "keys": [
+            { "key": "DSA-1069", "label": "Omega Escalations / Unplanned Work" }
+          ]
+        }
+      ]
+    },
+    "onprem": {
+      "title": "DLP On-Prem",
+      "sections": [
+        {
+          "title": "Customer-Facing Features",
+          "badge": "PI 2026.2 deliveries",
+          "keys": [
+            { "key": "DSA-835",  "label": "[Walmart, Citi] High Availability & Disaster Recovery — Backup and Restore" },
+            { "key": "DSA-940",  "label": "DLPaaS | Fingerprint Classifiers | Structured Data using FSM Crawler" },
+            { "key": "DSA-1098", "label": "Add Missing Data Theft Rules to the Data Theft Policy" },
+            { "key": "DSA-1043", "label": "Classifier Customer Requests (Planned)" },
+            { "key": "DSA-593",  "label": "[Bank Mizrachi] Show the number of matches in the incident for a rule" },
+            { "key": "DSA-1040", "label": "[Walmart] Skip time validation in certificate validation (workaround for expiring CA certs)" },
+            { "key": "DSA-442",  "label": "Fingerprinter Service | Structured" },
+            { "key": "DSA-755",  "label": "10.5 Policy export/import — API for critical resources and classifiers", "note": "Policy Import & Export v3" },
+            { "key": "DSA-774",  "label": "Policy export — Endpoint Applications and EP App groups", "note": "Policy Import & Export v3" },
+            { "key": "DSA-592",  "label": "Policy export — Script Classifiers", "note": "Policy Import & Export v3" },
+            { "key": "DSA-122",  "label": "Policy export — Endpoint Devices and Printers", "note": "Policy Import & Export v3" },
+            { "key": "DSA-1172", "label": "[Walmart] Onsite feedback for 10.5 implementation — FSM Work" }
+          ]
+        },
+        {
+          "title": "Operational, Tech Debt & Sustaining",
+          "badge": "Themes: DSA-927 / DSA-1050",
+          "keys": [
+            { "key": "DSA-1004", "label": "FSM Infra Sustaining Work" },
+            { "key": "DSA-1002", "label": "FSM Infra Vulnerabilities" },
+            { "key": "DSA-929",  "label": "Platinum Sustaining Work (FSM Portal)" },
+            { "key": "DSA-961",  "label": "Classification | Technical Debt" },
+            { "key": "DSA-1099", "label": "VS2025 upgrade: Upgrade 3rd Party libs to compiler compatible version", "note": "Carried from prior PI (created 2025-12-25)" }
+          ]
+        },
+        {
+          "title": "Escalations & Urgent Customer Work",
+          "badge": "Theme: DSA-1095",
+          "keys": [
+            { "key": "DSA-1003", "label": "FSM Infra Escalations (Fast Tracks, Unplanned: IB's and Customer Bugs)" },
+            { "key": "DSA-1046", "label": "Classification | Escalations (Fast Tracks, Unplanned: IB's and Customer Bugs)" }
+          ]
+        }
+      ]
+    }
+  }
+}
