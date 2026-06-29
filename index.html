@@ -314,8 +314,9 @@ main {
 
 <header>
   <div class="site-title">DLP Program Dashboard</div>
-  <div style="display:flex;align-items:center;gap:10px">
+  <div style="display:flex;align-items:center;gap:16px">
     <div class="as-of" id="hdr-date"></div>
+    <div class="as-of" id="last-fetched" style="color:var(--text-dim)" title="When this page last fetched data"></div>
     <button class="hdr-btn" id="settings-toggle" title="Configure SLA thresholds">&#x2699; SLA</button>
   </div>
 </header>
@@ -358,7 +359,7 @@ main {
         <div class="card-body" id="cloud-esc-body"><div class="loading">Loading…</div></div>
       </a>
       <a class="card" href="pi-dashboard.html">
-        <div class="card-top"><div class="card-title">PI 2026.1 Initiatives</div><div class="card-arrow">&#x2197;</div></div>
+        <div class="card-top"><div class="card-title">PI 2026.2 Initiatives</div><div class="card-arrow">&#x2197;</div></div>
         <div class="card-body" id="cloud-pi-body"><div class="loading">Loading…</div></div>
       </a>
       <a class="card" href="stalled.html?product=cloud">
@@ -386,7 +387,7 @@ main {
         <div class="card-body" id="onprem-esc-body"><div class="loading">Loading…</div></div>
       </a>
       <a class="card" href="pi-dashboard.html">
-        <div class="card-top"><div class="card-title">PI 2026.1 Initiatives</div><div class="card-arrow">&#x2197;</div></div>
+        <div class="card-top"><div class="card-title">PI 2026.2 Initiatives</div><div class="card-arrow">&#x2197;</div></div>
         <div class="card-body" id="onprem-pi-body"><div class="loading">Loading…</div></div>
       </a>
       <a class="card" href="stalled.html?product=onprem">
@@ -475,6 +476,15 @@ main {
 </div>
 
 <script>
+// ─── PI 2026.2 Timeline ───────────────────────────────────────────────────────
+
+const PI_START = new Date('2026-04-01T00:00:00');
+const PI_END   = new Date('2026-06-21T23:59:59');
+const PI_TOTAL_DAYS   = Math.max(1, (PI_END - PI_START) / 86400000);
+const PI_ELAPSED_DAYS = Math.max(0, Math.min(PI_TOTAL_DAYS, (Date.now() - PI_START) / 86400000));
+const PI_ELAPSED_PCT  = Math.round(PI_ELAPSED_DAYS / PI_TOTAL_DAYS * 100);
+const PI_DAYS_LEFT    = Math.max(0, Math.ceil((PI_END - Date.now()) / 86400000));
+
 // ─── SLA Config ───────────────────────────────────────────────────────────────
 
 const SLA_KEY = 'dlp-sla-v1';
@@ -635,12 +645,18 @@ async function loadPI() {
     const done = countBadgeClass(section, 'status-done'),   review   = countBadgeClass(section, 'status-review');
     const progress = countBadgeClass(section, 'status-progress'), todo = countBadgeClass(section, 'status-todo');
     const blocked  = countBadgeClass(section, 'status-blocked'),  deferred = countBadgeClass(section, 'status-deferred');
+    // Unplanned = initiative rows (not blockers) without data-planned="yes"
+    const unplanned = (section.match(/<tr class="row-(?:done|incomplete)">/g) || []).length;
     const total    = done + review + progress + todo + blocked + deferred;
     const active   = Math.max(1, total - deferred - blocked);
     const inFlight = review + progress;
-    const score    = Math.min(100, Math.round((done * 100 + review * 75 + progress * 40) / active));
+    const rawScore = Math.min(100, Math.round((done * 100 + review * 75 + progress * 40) / active));
     const pctDone  = Math.round(done / active * 100);
-    return { done, review, progress, todo, blocked, deferred, total, active, inFlight, score, pctDone };
+    // Time-pressured score: subtract a penalty proportional to the deficit between
+    // raw progress and PI time elapsed. On-pace = no penalty; behind = score drops.
+    const deficit = Math.max(0, PI_ELAPSED_PCT - rawScore);
+    const score = Math.max(0, Math.round(rawScore - 0.7 * deficit));
+    return { done, review, progress, todo, blocked, deferred, unplanned, total, active, inFlight, rawScore, score, pctDone };
   }
   renderPICard('cloud-pi-body',  analyzePI(cloudSection));
   renderPICard('onprem-pi-body', analyzePI(onpremSection));
@@ -648,12 +664,15 @@ async function loadPI() {
 
 function renderPICard(bodyId, d) {
   const defBlocked = d.deferred + d.blocked;
+  const timeLabel = PI_DAYS_LEFT > 0
+    ? `${PI_DAYS_LEFT}d left &middot; ${PI_ELAPSED_PCT}% elapsed`
+    : `PI 2026.2 ended`;
   document.getElementById(bodyId).innerHTML = `
     <div class="score-section">
-      ${ring(d.score, 'Progress')}
+      ${ring(d.score, 'Health')}
       <div class="score-info">
         <div class="score-headline ${scoreClass(d.score)}">${d.done} Done</div>
-        <div class="score-sub">${d.pctDone}% complete &middot; ${d.total} total<br>PI 2026.1</div>
+        <div class="score-sub">${d.pctDone}% complete &middot; ${d.total} total &middot; raw ${d.rawScore}%<br>PI 2026.2 &middot; ${timeLabel}</div>
       </div>
     </div>
     <hr class="div">
@@ -662,6 +681,7 @@ function renderPICard(bodyId, d) {
       ${stat(d.inFlight, 'In Flight',   'c-yellow')}
       ${stat(d.todo,     'Not Started', d.todo > 5 ? 'c-orange' : '')}
       ${stat(defBlocked, 'Def/Blocked', defBlocked > 2 ? 'c-red' : 'c-orange')}
+      <div class="stat" style="grid-column: 1 / -1"><div class="stat-val${d.unplanned > 0 ? ' c-orange' : ''}">${d.unplanned}</div><div class="stat-lbl">Unplanned (added mid-PI)</div></div>
     </div>`;
 }
 
@@ -903,12 +923,20 @@ document.getElementById('ed-reset').addEventListener('click', () => {
 
 // ─── Boot & Refresh ───────────────────────────────────────────────────────────
 
+function updateFetchedAt() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  const ss = String(now.getSeconds()).padStart(2, '0');
+  document.getElementById('last-fetched').textContent = 'Fetched ' + hh + ':' + mm + ':' + ss;
+}
+
 function refresh() {
   Promise.all([
     loadEscalation().catch(e => { console.error(e); ['cloud-esc-body','onprem-esc-body'].forEach(id => document.getElementById(id).innerHTML = '<div class="loading">Failed to load</div>'); }),
     loadPI().catch(e => { console.error(e); ['cloud-pi-body','onprem-pi-body'].forEach(id => document.getElementById(id).innerHTML = '<div class="loading">Failed to load</div>'); }),
     loadStalled().catch(e => { console.error(e); ['cloud-stall-body','onprem-stall-body'].forEach(id => document.getElementById(id).innerHTML = '<div class="loading">Failed to load</div>'); }),
-  ]);
+  ]).then(updateFetchedAt);
 }
 
 refresh();
