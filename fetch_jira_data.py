@@ -221,8 +221,11 @@ def extract_customer(fields):
     leading = re.match(r"^\s*((?:\[[^\]]+\]\s*)+)", summary)
     if leading:
         for tag in re.findall(r"\[([^\]]+)\]", leading.group(1)):
-            if tag.strip().upper() not in generic:
-                return tag.strip()
+            tag = tag.strip()
+            # Skip generic category labels and bare version tags (e.g. "10.2", "v10.5").
+            if tag.upper() in generic or re.fullmatch(r"v?\d+(?:\.\d+)*", tag, re.I):
+                continue
+            return tag
     return "—"
 
 
